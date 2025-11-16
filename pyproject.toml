@@ -8,7 +8,7 @@ version = "1.0.1"
 description = "HL7 Portugal - Message Anonymization Tool"
 readme = "README.md"
 requires-python = ">=3.9"
-license = {text = "MIT"}
+license = "MIT"
 authors = [
     {name = "HL7 Portugal"}
 ]
@@ -26,7 +26,7 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["nubilum"]
+packages = ["nubilum", "nubilum.static"]
 include-package-data = true
 
 [tool.setuptools.package-data]
