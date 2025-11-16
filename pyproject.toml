@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "nubilum"
-version = "1.0.1"
+version = "1.0.2"
 description = "HL7 Portugal - Message Anonymization Tool"
 readme = "README.md"
 requires-python = ">=3.9"
