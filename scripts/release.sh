@@ -202,8 +202,10 @@ pip install nubilum==$VERSION
 ### Using Docker
 \`\`\`bash
 docker pull $REGISTRY/$REPO:$VERSION
-docker run -p 5000:5000 $REGISTRY/$REPO:$VERSION
+docker run -p 5000:80 $REGISTRY/$REPO:$VERSION
 \`\`\`
+
+Then access the application at http://localhost:5000
 
 ## Technical Details
 
