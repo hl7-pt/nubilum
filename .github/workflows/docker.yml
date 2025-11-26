@@ -21,7 +21,7 @@ jobs:
       env:
         GIT_COMMIT: $(git rev-parse HEAD)
       with:
-        name: jfcal/causality-assessment-api
+        name: hl7pt/nubilum
         username: ${{ secrets.DOCKER_USERNAME }}
         password: ${{ secrets.DOCKER_PASSWORD }}
         cache: ${{ github.event_name != 'schedule' }}
