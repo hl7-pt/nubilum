@@ -200,9 +200,19 @@ pip install nubilum==$VERSION
 \`\`\`
 
 ### Using Docker
+
+**Full Stack (with nginx):**
 \`\`\`bash
 docker pull $REGISTRY/$REPO:$VERSION
-docker run -p 5000:80 $REGISTRY/$REPO:$VERSION
+docker run -p 8080:80 $REGISTRY/$REPO:$VERSION
+\`\`\`
+
+Then access the application at http://localhost:8080
+
+**Standalone (for external reverse proxy):**
+\`\`\`bash
+docker pull $REGISTRY/$REPO:$VERSION-standalone
+docker run -p 5000:5000 $REGISTRY/$REPO:$VERSION-standalone
 \`\`\`
 
 Then access the application at http://localhost:5000
@@ -230,14 +240,23 @@ else
     print_warning "Skipping GitHub release creation"
 fi
 
-# Build and push Docker container
+# Build and push Docker containers
 if [ "$SKIP_DOCKER" = false ]; then
-    print_info "Building Docker container..."
+    print_info "Building Docker containers..."
 
+    # Full stack image (with nginx)
     IMAGE_TAG="$REGISTRY/$REPO:$VERSION"
     IMAGE_LATEST="$REGISTRY/$REPO:latest"
 
+    # Standalone image (without nginx)
+    IMAGE_TAG_STANDALONE="$REGISTRY/$REPO:$VERSION-standalone"
+    IMAGE_LATEST_STANDALONE="$REGISTRY/$REPO:latest-standalone"
+
+    print_info "Building full stack image (with nginx)..."
     docker build -t "$IMAGE_TAG" -t "$IMAGE_LATEST" .
+
+    print_info "Building standalone image (without nginx)..."
+    docker build -f Dockerfile.standalone -t "$IMAGE_TAG_STANDALONE" -t "$IMAGE_LATEST_STANDALONE" .
 
     print_info "Logging into GitHub Container Registry..."
 
@@ -260,14 +279,32 @@ if [ "$SKIP_DOCKER" = false ]; then
         print_info "Skipping Docker push. You can manually push later with:"
         echo "  docker push $IMAGE_TAG"
         echo "  docker push $IMAGE_LATEST"
+        echo "  docker push $IMAGE_TAG_STANDALONE"
+        echo "  docker push $IMAGE_LATEST_STANDALONE"
     else
         print_info "Pushing Docker images..."
+        PUSH_SUCCESS=true
+
         if docker push "$IMAGE_TAG" && docker push "$IMAGE_LATEST"; then
-            print_info "Docker images published:"
+            print_info "Full stack images published:"
             echo "  - $IMAGE_TAG"
             echo "  - $IMAGE_LATEST"
         else
-            print_error "Docker push failed! You may need to:"
+            print_error "Full stack image push failed!"
+            PUSH_SUCCESS=false
+        fi
+
+        if docker push "$IMAGE_TAG_STANDALONE" && docker push "$IMAGE_LATEST_STANDALONE"; then
+            print_info "Standalone images published:"
+            echo "  - $IMAGE_TAG_STANDALONE"
+            echo "  - $IMAGE_LATEST_STANDALONE"
+        else
+            print_error "Standalone image push failed!"
+            PUSH_SUCCESS=false
+        fi
+
+        if [ "$PUSH_SUCCESS" = false ]; then
+            print_error "Some Docker pushes failed! You may need to:"
             print_info "1. Create a PAT with 'write:packages' scope at https://github.com/settings/tokens"
             print_info "2. Enable package write permissions for the repository"
             print_info "3. Re-run: export GITHUB_TOKEN=<your-token> && ./scripts/release.sh $VERSION --skip-build --skip-gh"
@@ -283,9 +320,17 @@ echo "Summary:"
 echo "  - Version: $VERSION"
 echo "  - Tag: $TAG"
 echo "  - GitHub Release: https://github.com/$REPO/releases/tag/$TAG"
-[ "$SKIP_DOCKER" = false ] && echo "  - Docker Image: $REGISTRY/$REPO:$VERSION"
+if [ "$SKIP_DOCKER" = false ]; then
+    echo "  - Docker Images:"
+    echo "    - Full stack: $REGISTRY/$REPO:$VERSION"
+    echo "    - Standalone: $REGISTRY/$REPO:$VERSION-standalone"
+fi
 echo ""
 print_info "Next steps:"
 echo "  1. Verify the release at https://github.com/$REPO/releases"
-[ "$SKIP_DOCKER" = false ] && echo "  2. Test the Docker image: docker run -p 5000:5000 $REGISTRY/$REPO:$VERSION"
+if [ "$SKIP_DOCKER" = false ]; then
+    echo "  2. Test the Docker images:"
+    echo "     - Full stack: docker run -p 8080:80 $REGISTRY/$REPO:$VERSION"
+    echo "     - Standalone: docker run -p 5000:5000 $REGISTRY/$REPO:$VERSION-standalone"
+fi
 echo "  3. Push to main: git push upstream main"

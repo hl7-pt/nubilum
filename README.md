@@ -329,8 +329,12 @@ Nubilum includes an automated release script that handles version bumping, build
 4. ✅ Creates and pushes git tag (e.g., `v1.2.0`)
 5. ✅ Creates GitHub release with release notes
 6. ✅ Uploads wheel to GitHub release
-7. ✅ Builds Docker image (both versioned and `latest` tags)
+7. ✅ Builds Docker images (both full stack and standalone variants)
 8. ✅ Pushes Docker images to GitHub Container Registry
+   - `ghcr.io/hl7-pt/nubilum:VERSION` (full stack with nginx)
+   - `ghcr.io/hl7-pt/nubilum:latest` (full stack with nginx)
+   - `ghcr.io/hl7-pt/nubilum:VERSION-standalone` (standalone without nginx)
+   - `ghcr.io/hl7-pt/nubilum:latest-standalone` (standalone without nginx)
 
 **Docker Authentication:**
 
