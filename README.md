@@ -1,6 +1,6 @@
 # Nubilum - HL7 Portugal Message Anonymization Tool
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.9+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -12,6 +12,8 @@ Nubilum is a web-based tool for anonymizing HL7 v2 messages in ER7 format. It pr
 - **Multi-Segment Support**: Anonymizes PID, NK1, PV1, OBX, ORC, OBR, SCH, AIG, AIL, AIP, and other segments
 - **Multi-Message Processing**: Handles multiple HL7 messages in a single request (separated by blank lines or multiple MSH segments)
 - **HL7 Message Validation**: Validates messages using HL7 Portugal validator API with collapsible result badges
+- **Multi-Language Support**: Full internationalization with English and Portuguese (i18n via Flask-Babel)
+- **Language Auto-Detection**: Automatic language detection from browser preferences
 - **Field Name Tooltips**: Hover over any field to see its HL7 standard name (version-aware using hl7apy)
 - **Smart Pseudo-Generation**: Generates consistent pseudo-names and IDs that indicate field purpose
 - **Real-Time Processing**: No storage of messages - all processing is done in real-time
@@ -29,10 +31,16 @@ Nubilum is a web-based tool for anonymizing HL7 v2 messages in ER7 format. It pr
 
 ### Quick Start with Docker
 
+Nubilum provides two Docker deployment options:
+
+#### Option 1: Full Stack with Nginx (Recommended for Production)
+
+The default `Dockerfile` includes nginx as a reverse proxy serving static files and proxying API requests.
+
 1. **Build the Docker image:**
 
 ```bash
-docker build -t nubilum:1.0.0 .
+docker build -t nubilum:1.1.0 .
 ```
 
 2. **Run the container:**
@@ -42,12 +50,53 @@ docker run -d \
   --name nubilum \
   -p 8080:80 \
   -v $(pwd)/logs:/var/log/nubilum \
-  nubilum:1.0.0
+  nubilum:1.1.0
 ```
 
 3. **Access the application:**
 
 Open your browser and navigate to `http://localhost:8080`
+
+#### Option 2: Standalone with External Reverse Proxy
+
+Use `Dockerfile.standalone` when you have an external nginx or other reverse proxy.
+
+1. **Build the standalone image:**
+
+```bash
+docker build -f Dockerfile.standalone -t nubilum:1.1.0-standalone .
+```
+
+2. **Run the container:**
+
+```bash
+docker run -d \
+  --name nubilum \
+  -p 5000:5000 \
+  -v $(pwd)/logs:/var/log/nubilum \
+  nubilum:1.1.0-standalone
+```
+
+3. **Configure your reverse proxy:**
+
+Point your nginx/reverse proxy to `http://localhost:5000` for API requests and serve static files from the container or your own location.
+
+**Example nginx configuration:**
+
+```nginx
+server {
+    listen 80;
+    server_name nubilum.yourdomain.com;
+
+    location / {
+        proxy_pass http://localhost:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+```
 
 ### Manual Installation
 
@@ -60,7 +109,7 @@ Open your browser and navigate to `http://localhost:8080`
 2. **Install the package:**
 
 ```bash
-pip install dist/nubilum-1.0.0-py3-none-any.whl
+pip install dist/nubilum-1.1.0-py3-none-any.whl
 ```
 
 3. **Run the application:**
@@ -242,7 +291,71 @@ pip install build
 python -m build
 
 # Install locally
-pip install dist/nubilum-1.0.0-py3-none-any.whl
+pip install dist/nubilum-1.1.0-py3-none-any.whl
+```
+
+### Creating a Release
+
+Nubilum includes an automated release script that handles version bumping, building, tagging, and publishing to GitHub and Docker registries.
+
+**Requirements:**
+- `git`
+- `python3` with `build` module (`pip install build`)
+- `gh` CLI tool ([GitHub CLI](https://cli.github.com/)) - authenticated
+- `docker` (for container publishing)
+- Write access to the repository
+
+**Basic Usage:**
+
+```bash
+# Create a new release
+./scripts/release.sh 1.2.0
+
+# Create a draft release (for review before publishing)
+./scripts/release.sh 1.2.0 --draft
+
+# Skip Docker build (for faster releases during development)
+./scripts/release.sh 1.2.0 --skip-docker
+
+# Skip GitHub release creation (only build and tag)
+./scripts/release.sh 1.2.0 --skip-gh
+```
+
+**What the release script does:**
+
+1. ✅ Updates version in `pyproject.toml`
+2. ✅ Commits the version change
+3. ✅ Builds Python wheel package
+4. ✅ Creates and pushes git tag (e.g., `v1.2.0`)
+5. ✅ Creates GitHub release with release notes
+6. ✅ Uploads wheel to GitHub release
+7. ✅ Builds Docker image (both versioned and `latest` tags)
+8. ✅ Pushes Docker images to GitHub Container Registry
+
+**Docker Authentication:**
+
+To publish Docker images, you need a GitHub Personal Access Token with `write:packages` scope:
+
+```bash
+# Create a token at: https://github.com/settings/tokens/new?scopes=write:packages,read:packages
+# Then set it as an environment variable:
+export GITHUB_TOKEN=your_token_here
+
+# Run the release
+./scripts/release.sh 1.2.0
+```
+
+**All Options:**
+
+```bash
+./scripts/release.sh <version> [options]
+
+Options:
+  --skip-build      Skip building the wheel
+  --skip-docker     Skip building and pushing Docker container
+  --skip-gh         Skip creating GitHub release
+  --draft           Create release as draft
+  -h, --help        Show help message
 ```
 
 ## Architecture
@@ -443,6 +556,25 @@ For issues, questions, or contributions, please visit:
 
 ---
 
-**Version**: 1.0.0
-**Last Updated**: January 2025
+## Internationalization
+
+Nubilum supports multiple languages with automatic browser language detection:
+
+- **English (en)**: Default language
+- **Portuguese (pt)**: Full translation coverage
+
+### Changing Language
+
+Users can change the language using the language selector in the header (flag icon). The selected language is stored in the browser and persists across sessions.
+
+### Adding New Languages
+
+See [I18N_GUIDE.md](I18N_GUIDE.md) for detailed instructions on:
+- Adding new languages
+- Managing translations
+- Translation workflow
+- API endpoints for language management
+
+**Version**: 1.1.0
+**Last Updated**: December 2025
 **Maintained by**: HL7 Portugal

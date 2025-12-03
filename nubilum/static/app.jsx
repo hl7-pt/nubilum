@@ -3,6 +3,50 @@ const { useState, useEffect } = React;
 // Cache for field names to avoid repeated API calls
 const fieldNameCache = {};
 
+// Language Selector Component - Simple button style matching hl7.pt
+function LanguageSelector({ currentLang, onLanguageChange }) {
+    const handleLanguageSelect = async (langCode) => {
+        try {
+            // Update backend session
+            await fetch('/api/language', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ language: langCode })
+            });
+
+            // Store preference locally
+            setStoredLanguage(langCode);
+
+            // Update document language
+            document.documentElement.lang = langCode;
+
+            // Notify parent component
+            onLanguageChange(langCode);
+        } catch (error) {
+            console.error('Failed to change language:', error);
+        }
+    };
+
+    return (
+        <div className="language-selector">
+            <button
+                className={`language-btn ${currentLang === 'en' ? 'active' : ''}`}
+                onClick={() => handleLanguageSelect('en')}
+                aria-label="English"
+            >
+                EN
+            </button>
+            <button
+                className={`language-btn ${currentLang === 'pt' ? 'active' : ''}`}
+                onClick={() => handleLanguageSelect('pt')}
+                aria-label="Português"
+            >
+                PT
+            </button>
+        </div>
+    );
+}
+
 // HL7 Message Display Component with inline editing
 function HL7MessageDisplay({ message, originalMessage = '' }) {
     const [fieldNameTooltip, setFieldNameTooltip] = useState(null);
@@ -228,6 +272,7 @@ function App() {
     const [showExampleModal, setShowExampleModal] = useState(false);
     const [validationResult, setValidationResult] = useState(null);
     const [expandedValidations, setExpandedValidations] = useState({});
+    const [currentLanguage, setCurrentLanguage] = useState(getCurrentLanguage());
 
     useEffect(() => {
         // Fetch version on load
@@ -239,7 +284,7 @@ function App() {
 
     const handleAnonymize = async () => {
         if (!inputMessage.trim()) {
-            setAlert({ type: 'error', message: 'Please enter an HL7 message to anonymize.' });
+            setAlert({ type: 'error', message: t('enterMessageToAnonymize', currentLanguage) });
             return;
         }
 
@@ -260,14 +305,14 @@ function App() {
             if (data.success) {
                 setOutputMessage(data.anonymized_message);
                 const successMsg = data.message_count === 1
-                    ? 'Message anonymized successfully!'
-                    : `${data.message_count} messages anonymized successfully!`;
+                    ? t('messageAnonymizedSuccess', currentLanguage)
+                    : `${data.message_count} ${t('messagesAnonymizedSuccess', currentLanguage)}`;
                 setAlert({ type: 'success', message: successMsg });
             } else {
-                setAlert({ type: 'error', message: data.error || 'Anonymization failed.' });
+                setAlert({ type: 'error', message: data.error || t('anonymizationFailed', currentLanguage) });
             }
         } catch (error) {
-            setAlert({ type: 'error', message: 'Failed to connect to the server.' });
+            setAlert({ type: 'error', message: t('failedToConnect', currentLanguage) });
         } finally {
             setLoading(false);
         }
@@ -278,20 +323,20 @@ function App() {
         setOutputMessage('');
         setValidationResult(null);
         setExpandedValidations({});
-        setAlert({ type: 'info', message: 'Messages cleared.' });
+        setAlert({ type: 'info', message: t('messagesCleared', currentLanguage) });
     };
 
     const handleCopy = async () => {
         if (!outputMessage) {
-            setAlert({ type: 'error', message: 'No message to copy.' });
+            setAlert({ type: 'error', message: t('noMessageToCopy', currentLanguage) });
             return;
         }
 
         try {
             await navigator.clipboard.writeText(outputMessage);
-            setAlert({ type: 'success', message: 'Message copied to clipboard!' });
+            setAlert({ type: 'success', message: t('copiedToClipboard', currentLanguage) });
         } catch (error) {
-            setAlert({ type: 'error', message: 'Failed to copy message.' });
+            setAlert({ type: 'error', message: t('failedToCopy', currentLanguage) });
         }
     };
 
@@ -304,7 +349,7 @@ function App() {
         setOutputMessage('');  // Clear previous output
         setValidationResult(null);  // Clear validation result
         setExpandedValidations({});  // Clear expanded state
-        setAlert({ type: 'info', message: 'Example message loaded.' });
+        setAlert({ type: 'info', message: t('exampleMessageLoaded', currentLanguage) });
     };
 
     const toggleValidationExpand = (messageNumber) => {
@@ -316,7 +361,7 @@ function App() {
 
     const handleValidate = async () => {
         if (!inputMessage.trim()) {
-            setAlert({ type: 'error', message: 'Please enter an HL7 message to validate.' });
+            setAlert({ type: 'error', message: t('enterMessageToValidate', currentLanguage) });
             return;
         }
 
@@ -350,23 +395,23 @@ function App() {
                     setAlert({
                         type: 'success',
                         message: data.message_count === 1
-                            ? 'Message is valid!'
-                            : `All ${data.message_count} messages are valid!`
+                            ? t('messageValidated', currentLanguage)
+                            : `${data.message_count} ${t('messagesValidated', currentLanguage)}`
                     });
                 } else {
                     setAlert({
                         type: 'error',
                         message: data.message_count === 1
-                            ? 'Message validation failed.'
-                            : `${invalidCount} of ${data.message_count} message(s) failed validation.`
+                            ? t('messageFailedValidation', currentLanguage)
+                            : `${invalidCount} ${t('messagesFailedValidation', currentLanguage)}`
                     });
                 }
             } else {
-                setAlert({ type: 'error', message: data.error || 'Validation failed.' });
+                setAlert({ type: 'error', message: data.error || t('validationFailed', currentLanguage) });
             }
         } catch (error) {
             console.error('Validation error:', error);
-            setAlert({ type: 'error', message: 'Failed to connect to validation service.' });
+            setAlert({ type: 'error', message: t('failedToValidate', currentLanguage) });
         } finally {
             setValidating(false);
         }
@@ -392,21 +437,23 @@ function App() {
                     />
                     <div className="header-text">
                         <h1>Nubilum</h1>
-                        <p>HL7 Portugal Message Anonymization Tool</p>
+                        <p>{t('appDescription', currentLanguage)}</p>
                     </div>
                 </div>
-                {version && <div className="version">v{version}</div>}
+                <div className="header-right">
+                    <LanguageSelector
+                        currentLang={currentLanguage}
+                        onLanguageChange={setCurrentLanguage}
+                    />
+                    {version && <div className="version">v{version}</div>}
+                </div>
             </header>
 
             <div className="disclaimer">
                 <span className="disclaimer-icon">⚠️</span>
                 <div className="disclaimer-content">
-                    <h3>Privacy Notice</h3>
-                    <p>
-                        This tool does NOT store any messages. All anonymization is performed in real-time,
-                        and no data is retained on our servers. However, please ensure you have the proper
-                        authorization to process any HL7 messages containing personal health information.
-                    </p>
+                    <h3>{t('privacyNotice', currentLanguage)}</h3>
+                    <p>{t('privacyText', currentLanguage)}</p>
                 </div>
             </div>
 
@@ -419,7 +466,7 @@ function App() {
             )}
 
             <div className="legend">
-                <h3>Segment Color Legend</h3>
+                <h3>{t('segmentColorLegend', currentLanguage)}</h3>
                 <div className="legend-items">
                     <div className="legend-item">
                         <div className="legend-color" style={{ background: 'rgba(47, 90, 174, 0.12)' }}></div>
@@ -451,13 +498,13 @@ function App() {
             <div className="main-content">
                 <div className="panel">
                     <div className="panel-header">
-                        <h2>Input Message</h2>
+                        <h2>{t('inputMessage', currentLanguage)}</h2>
                         <button
                             className="btn btn-secondary"
                             onClick={handleLoadExample}
                             style={{ padding: '6px 12px', fontSize: '13px' }}
                         >
-                            Load Example
+                            {t('loadExample', currentLanguage)}
                         </button>
                     </div>
                     <div className="textarea-container">
@@ -465,7 +512,7 @@ function App() {
                             className="message-input"
                             value={inputMessage}
                             onChange={(e) => setInputMessage(e.target.value)}
-                            placeholder="Paste your HL7 v2 message here (ER7 format)..."
+                            placeholder={t('pasteMessage', currentLanguage)}
                         />
                         <div className="char-counter">{inputMessage.length} characters</div>
                     </div>
@@ -478,12 +525,12 @@ function App() {
                             {validating ? (
                                 <>
                                     <div className="spinner"></div>
-                                    <span>Validating...</span>
+                                    <span>{t('processing', currentLanguage)}</span>
                                 </>
                             ) : (
                                 <>
                                     <span>✓</span>
-                                    <span>Validate Message</span>
+                                    <span>{t('validateButton', currentLanguage)}</span>
                                 </>
                             )}
                         </button>
@@ -495,85 +542,86 @@ function App() {
                             {loading ? (
                                 <>
                                     <div className="spinner"></div>
-                                    <span>Anonymizing...</span>
+                                    <span>{t('processing', currentLanguage)}</span>
                                 </>
                             ) : (
                                 <>
                                     <span>🔒</span>
-                                    <span>Anonymize Message</span>
+                                    <span>{t('anonymizeButton', currentLanguage)}</span>
                                 </>
                             )}
                         </button>
                     </div>
-                    {validationResult && (
-                        <div className="validation-results-container">
-                            {validationResult.results.map((result, idx) => {
-                                const isValid = result.valid;
-                                const isExpanded = expandedValidations[result.message_number];
-                                const hasDetails = !isValid && result.details?.details && result.details.details.length > 0;
-
-                                return (
-                                    <div key={idx} className="validation-badge-container">
-                                        <div
-                                            className={`validation-badge ${isValid ? 'validation-badge-success' : 'validation-badge-error'} ${hasDetails ? 'clickable' : ''}`}
-                                            onClick={() => hasDetails && toggleValidationExpand(result.message_number)}
-                                            title={hasDetails ? 'Click to view details' : result.message}
-                                        >
-                                            <div className="validation-badge-content">
-                                                {validationResult.messageCount > 1 && (
-                                                    <span className="validation-badge-number">Msg {result.message_number}</span>
-                                                )}
-                                                <span className="validation-badge-icon">
-                                                    {isValid ? '✓' : '✗'}
-                                                </span>
-                                                <span className="validation-badge-text">
-                                                    {isValid ? 'Valid' : 'Invalid'}
-                                                </span>
-                                                {hasDetails && (
-                                                    <span className="validation-badge-arrow">
-                                                        {isExpanded ? '▼' : '▶'}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {hasDetails && isExpanded && (
-                                            <div className="validation-details">
-                                                <div className="validation-details-message">
-                                                    {result.message}
-                                                </div>
-                                                <div className="validation-errors">
-                                                    {result.details.details.slice(0, 5).map((detail, detailIdx) => (
-                                                        <div key={detailIdx} className="validation-error-item">
-                                                            <span className="validation-error-level">{detail.level}:</span>
-                                                            <span>{detail.message}</span>
-                                                        </div>
-                                                    ))}
-                                                    {result.details.details.length > 5 && (
-                                                        <div className="validation-more">
-                                                            +{result.details.details.length - 5} more errors
-                                                        </div>
-                                                    )}
-                                                </div>
-                                                <a
-                                                    href={validationResult.validatorUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="validation-details-link"
-                                                >
-                                                    View full details at HL7 PT Validator →
-                                                </a>
-                                            </div>
-                                        )}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    )}
                 </div>
+
+                {validationResult && (
+                    <div className="validation-middle-panel">
+                        {validationResult.results.map((result, idx) => {
+                            const isValid = result.valid;
+                            const isExpanded = expandedValidations[result.message_number];
+                            const hasDetails = !isValid && result.details?.details && result.details.details.length > 0;
+
+                            return (
+                                <div key={idx} className="validation-badge-container">
+                                    <div
+                                        className={`validation-badge ${isValid ? 'validation-badge-success' : 'validation-badge-error'} ${hasDetails ? 'clickable' : ''}`}
+                                        onClick={() => hasDetails && toggleValidationExpand(result.message_number)}
+                                        title={hasDetails ? 'Click to view details' : result.message}
+                                    >
+                                        <div className="validation-badge-content">
+                                            {validationResult.messageCount > 1 && (
+                                                <span className="validation-badge-number">Msg {result.message_number}</span>
+                                            )}
+                                            <span className="validation-badge-icon">
+                                                {isValid ? '✓' : '✗'}
+                                            </span>
+                                            <span className="validation-badge-text">
+                                                {isValid ? t('valid', currentLanguage) : t('invalid', currentLanguage)}
+                                            </span>
+                                            {hasDetails && (
+                                                <span className="validation-badge-arrow">
+                                                    {isExpanded ? '▼' : '▶'}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {hasDetails && isExpanded && (
+                                        <div className="validation-details">
+                                            <div className="validation-details-message">
+                                                {result.message}
+                                            </div>
+                                            <div className="validation-errors">
+                                                {result.details.details.slice(0, 5).map((detail, detailIdx) => (
+                                                    <div key={detailIdx} className="validation-error-item">
+                                                        <span className="validation-error-level">{detail.level}:</span>
+                                                        <span>{detail.message}</span>
+                                                    </div>
+                                                ))}
+                                                {result.details.details.length > 5 && (
+                                                    <div className="validation-more">
+                                                        +{result.details.details.length - 5} {t('moreErrors', currentLanguage)}
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <a
+                                                href={validationResult.validatorUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="validation-details-link"
+                                            >
+                                                {t('viewFullDetails', currentLanguage)}
+                                            </a>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
+                    </div>
+                )}
 
                 <div className="panel">
                     <div className="panel-header">
-                        <h2>Anonymized Output</h2>
+                        <h2>{t('anonymizedOutput', currentLanguage)}</h2>
                     </div>
                     <HL7MessageDisplay
                         message={outputMessage}
@@ -586,7 +634,7 @@ function App() {
                             disabled={!outputMessage}
                         >
                             <span>📋</span>
-                            <span>Copy to Clipboard</span>
+                            <span>{t('copyToClipboard', currentLanguage)}</span>
                         </button>
                         <button
                             className="btn btn-clear"
@@ -594,7 +642,7 @@ function App() {
                             disabled={!inputMessage && !outputMessage}
                         >
                             <span>🗑️</span>
-                            <span>Clear All</span>
+                            <span>{t('clearAll', currentLanguage)}</span>
                         </button>
                     </div>
                 </div>

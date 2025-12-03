@@ -20,12 +20,16 @@ docker-compose down
 
 ## Alternative: Build and Run with Docker
 
+### Option 1: Full Stack with Nginx (Recommended for Production)
+
+This option includes nginx as a reverse proxy and is the simplest deployment option.
+
 ```bash
 # Build
-docker build -t nubilum:1.0.0 .
+docker build -t nubilum:1.1.0 .
 
 # Run
-docker run -d --name nubilum -p 8080:80 nubilum:1.0.0
+docker run -d --name nubilum -p 8080:80 nubilum:1.1.0
 
 # View logs
 docker logs -f nubilum
@@ -34,6 +38,27 @@ docker logs -f nubilum
 docker stop nubilum
 docker rm nubilum
 ```
+
+### Option 2: Standalone with External Reverse Proxy
+
+Use this option if you already have nginx or another reverse proxy running externally.
+
+```bash
+# Build
+docker build -f Dockerfile.standalone -t nubilum:1.1.0-standalone .
+
+# Run (exposes port 5000)
+docker run -d --name nubilum -p 5000:5000 nubilum:1.1.0-standalone
+
+# View logs
+docker logs -f nubilum
+
+# Stop
+docker stop nubilum
+docker rm nubilum
+```
+
+**Note:** The standalone option runs gunicorn directly on port 5000. Configure your external reverse proxy to forward requests to this port.
 
 ## Development Mode (No Docker)
 

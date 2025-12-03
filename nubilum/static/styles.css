@@ -137,8 +137,18 @@ body {
     min-height: 0;
 }
 
+/* Three-column layout when validation results are present */
+.main-content:has(.validation-middle-panel) {
+    grid-template-columns: 1fr auto 1fr;
+    gap: 12px;
+}
+
 @media (max-width: 1024px) {
     .main-content {
+        grid-template-columns: 1fr;
+    }
+
+    .main-content:has(.validation-middle-panel) {
         grid-template-columns: 1fr;
     }
 }
@@ -388,6 +398,17 @@ body {
     background: #7a51a0;
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(148, 99, 174, 0.3);
+}
+
+/* Validation Middle Panel */
+.validation-middle-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: flex-start;
+    padding-top: 60px; /* Align with input message content area */
+    min-width: 120px;
+    max-width: 150px;
 }
 
 /* Validation Results Container */
@@ -795,4 +816,43 @@ body {
 .hl7-field {
     cursor: help;
     position: relative;
+}
+
+/* Header Right Section */
+.header-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+/* Language Selector - Simple button style matching hl7.pt */
+.language-selector {
+    display: flex;
+    gap: 10px;
+    margin-top: 0;
+}
+
+.language-btn {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 5px 10px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    text-decoration: none;
+    transition: background-color 0.2s ease;
+}
+
+.language-btn:hover {
+    background-color: #0056b3;
+}
+
+.language-btn.active {
+    background-color: #28a745;
+}
+
+.language-btn.active:hover {
+    background-color: #28a745;
 }

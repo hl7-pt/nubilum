@@ -3,11 +3,16 @@
 import logging
 import os
 from datetime import datetime
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, session
 from flask_cors import CORS
+from flask_babel import Babel, gettext, lazy_gettext
 from nubilum.anonymizer import HL7Anonymizer
 from nubilum.usage_tracker import UsageTracker
 from nubilum import __version__
+
+# Alias for translation functions
+_ = gettext
+_l = lazy_gettext
 
 # Configure logging
 log_dir = os.environ.get('NUBILUM_LOG_DIR', '/var/log/nubilum')
@@ -31,6 +36,33 @@ CORS(app)
 
 # Configure Flask
 app.config['MAX_CONTENT_LENGTH'] = 1 * 1024 * 1024  # 1MB max message size
+app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
+
+# Configure Babel for internationalization
+app.config['BABEL_TRANSLATION_DIRECTORIES'] = 'translations'
+app.config['BABEL_DEFAULT_LOCALE'] = 'en'
+app.config['BABEL_SUPPORTED_LOCALES'] = ['en', 'pt']
+
+babel = Babel(app)
+
+
+def get_locale():
+    """Determine the best locale for the user."""
+    # 1. Try to get language from session
+    if 'language' in session:
+        return session['language']
+
+    # 2. Try to get language from URL parameter
+    lang = request.args.get('lang')
+    if lang in app.config['BABEL_SUPPORTED_LOCALES']:
+        session['language'] = lang
+        return lang
+
+    # 3. Try to get language from request headers (browser preference)
+    return request.accept_languages.best_match(app.config['BABEL_SUPPORTED_LOCALES'])
+
+
+babel.init_app(app, locale_selector=get_locale)
 
 # Initialize usage tracker
 usage_log_file = os.path.join(log_dir, 'usage_log.jsonl')
@@ -95,6 +127,32 @@ def version():
     })
 
 
+@app.route('/api/language', methods=['GET', 'POST'])
+def language():
+    """Get or set the current language."""
+    if request.method == 'POST':
+        data = request.get_json()
+        lang = data.get('language')
+
+        if lang not in app.config['BABEL_SUPPORTED_LOCALES']:
+            return jsonify({
+                'success': False,
+                'error': _('Language not supported')
+            }), 400
+
+        session['language'] = lang
+        return jsonify({
+            'success': True,
+            'language': lang
+        })
+    else:
+        current_lang = get_locale()
+        return jsonify({
+            'language': current_lang,
+            'supported_languages': app.config['BABEL_SUPPORTED_LOCALES']
+        })
+
+
 @app.route('/api/usage/statistics', methods=['GET'])
 def usage_statistics():
     """
@@ -157,7 +215,7 @@ def validate():
         if not data:
             return jsonify({
                 'success': False,
-                'error': 'No data provided'
+                'error': _('No data provided')
             }), 400
 
         input_text = data.get('message', '')
@@ -165,7 +223,7 @@ def validate():
         if not input_text or input_text.strip() == '':
             return jsonify({
                 'success': False,
-                'error': 'Message is required'
+                'error': _('Message is required')
             }), 400
 
         # Split into individual messages
@@ -174,7 +232,7 @@ def validate():
         if not messages:
             return jsonify({
                 'success': False,
-                'error': 'No valid messages found'
+                'error': _('No valid messages found')
             }), 400
 
         logger.info(f"Validating {len(messages)} message(s)")
@@ -271,7 +329,7 @@ def field_name():
         if not segment_type or field_index is None:
             return jsonify({
                 'success': False,
-                'error': 'Both segment and field parameters are required'
+                'error': _('Both segment and field parameters are required')
             }), 400
 
         # HL7 field numbering is special for MSH
@@ -384,7 +442,7 @@ def anonymize():
             logger.warning("No JSON data provided")
             return jsonify({
                 'success': False,
-                'error': 'No data provided'
+                'error': _('No data provided')
             }), 400
 
         input_text = data.get('message', '')
@@ -393,7 +451,7 @@ def anonymize():
             logger.warning("Empty message provided")
             return jsonify({
                 'success': False,
-                'error': 'Message is required'
+                'error': _('Message is required')
             }), 400
 
         # Split into individual messages
@@ -402,7 +460,7 @@ def anonymize():
         if not messages:
             return jsonify({
                 'success': False,
-                'error': 'No valid messages found'
+                'error': _('No valid messages found')
             }), 400
 
         logger.info(f"Received {len(messages)} message(s) for anonymization")
@@ -453,7 +511,7 @@ def request_entity_too_large(error):
     logger.warning("Message too large")
     return jsonify({
         'success': False,
-        'error': 'Message too large. Maximum size is 1MB.'
+        'error': _('Message too large. Maximum size is 1MB.')
     }), 413
 
 
@@ -462,7 +520,7 @@ def not_found(error):
     """Handle 404 errors."""
     return jsonify({
         'success': False,
-        'error': 'Endpoint not found'
+        'error': _('Endpoint not found')
     }), 404
 
 
@@ -472,7 +530,7 @@ def internal_error(error):
     logger.error(f"Internal server error: {str(error)}", exc_info=True)
     return jsonify({
         'success': False,
-        'error': 'Internal server error'
+        'error': _('Internal server error')
     }), 500
 
 
