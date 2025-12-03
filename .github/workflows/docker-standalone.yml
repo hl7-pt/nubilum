@@ -1,0 +1,32 @@
+name: Docker Standalone Image CI
+
+on:
+  push:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+      
+    - uses: elgohr/Publish-Docker-Github-Action@v5
+      env:
+        GIT_COMMIT: $(git rev-parse HEAD)
+      with:
+        name: hl7pt/nubilum
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+        cache: ${{ github.event_name != 'schedule' }}
+        snapshot: true
+        tags: "standalone"
+        workdir: .
+        dockerfile: Dockerfile.standalone
+        buildargs: GIT_COMMIT
