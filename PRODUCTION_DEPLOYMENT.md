@@ -178,7 +178,7 @@ Expected response:
 #### SSL Certificate Errors
 
 - Check certificate paths in nginx configuration
-- Verify certificates exist: `ls -la /etc/letsencrypt/live/yourdomain/`
+- Verify certificates exist: `ls -la /etc/letsencrypt/live/nubilum.yourdomain.pt/`
 - Check certificate expiration: `sudo certbot certificates`
 
 #### Mixed Content Errors
