@@ -48,9 +48,44 @@
 
 ## Production Deployment
 
-### Option 1: Docker Compose (Recommended)
+### Option 1: Docker with External Nginx (HTTPS + Subdomain)
 
-- [ ] Create production docker-compose.yml if needed
+For deploying with an external nginx reverse proxy, HTTPS, and subdomain (e.g., `nubilum.yourdomain.pt`):
+
+See [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) for complete instructions.
+
+- [ ] Set up DNS for your subdomain
+- [ ] Obtain SSL certificates (Let's Encrypt)
+  ```bash
+  sudo certbot certonly --nginx -d nubilum.yourdomain.pt
+  ```
+
+- [ ] Configure external nginx
+  ```bash
+  sudo cp docker/nginx-external.conf.example /etc/nginx/sites-available/nubilum
+  # Edit to customize domain and SSL paths
+  sudo ln -s /etc/nginx/sites-available/nubilum /etc/nginx/sites-enabled/
+  sudo nginx -t && sudo systemctl reload nginx
+  ```
+
+- [ ] Set up log directory with proper permissions
+  ```bash
+  mkdir -p logs
+  chmod 755 logs
+  ```
+
+- [ ] Deploy using production compose file
+  ```bash
+  docker-compose -f docker-compose.production.yml up -d --build
+  ```
+
+- [ ] Verify health
+  ```bash
+  curl https://nubilum.yourdomain.pt/api/health
+  ```
+
+### Option 2: Docker Compose (Development/Direct Access)
+
 - [ ] Set up log directory with proper permissions
   ```bash
   mkdir -p /var/log/nubilum
@@ -67,14 +102,14 @@
   curl http://localhost:8080/api/health
   ```
 
-### Option 2: Kubernetes (Advanced)
+### Option 3: Kubernetes (Advanced)
 
 - [ ] Create Kubernetes manifests (Deployment, Service, Ingress)
 - [ ] Configure persistent volume for logs
 - [ ] Set up ingress with SSL/TLS
 - [ ] Deploy and verify
 
-### Option 3: Manual Installation
+### Option 4: Manual Installation
 
 - [ ] Set up Python 3.9+ environment
 - [ ] Install wheel

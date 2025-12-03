@@ -49,6 +49,29 @@ docker run -d \
 
 Open your browser and navigate to `http://localhost:8080`
 
+### Production Deployment (HTTPS with Subdomain)
+
+For production deployment with:
+- External nginx reverse proxy
+- HTTPS with SSL certificates
+- Subdomain configuration (e.g., `nubilum.yourdomain.pt`)
+- Running alongside other applications
+
+See [PRODUCTION_DEPLOYMENT.md](PRODUCTION_DEPLOYMENT.md) for detailed instructions.
+
+**Quick overview:**
+
+```bash
+# 1. Use production docker-compose
+docker-compose -f docker-compose.production.yml up -d --build
+
+# 2. Copy and configure external nginx
+sudo cp docker/nginx-external.conf.example /etc/nginx/sites-available/nubilum
+# Edit the file to set your domain and SSL certificate paths
+sudo ln -s /etc/nginx/sites-available/nubilum /etc/nginx/sites-enabled/
+sudo nginx -t && sudo systemctl reload nginx
+```
+
 ### Manual Installation
 
 1. **Build the wheel package:**

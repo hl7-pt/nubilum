@@ -1,0 +1,35 @@
+version: '3.8'
+
+# Production docker-compose for deployment behind an external nginx reverse proxy
+# This configuration is designed to work with:
+# - An external nginx handling HTTPS termination
+# - Subdomain-based routing (e.g., nubilum.yourdomain.pt)
+# - Let's Encrypt or other SSL certificates
+
+services:
+  nubilum:
+    build: .
+    container_name: nubilum
+    # Expose to localhost only - external nginx will proxy to this port
+    # Change 8080 if you need a different port
+    ports:
+      - "127.0.0.1:8080:80"
+    volumes:
+      - ./logs:/var/log/nubilum
+    environment:
+      - NUBILUM_LOG_DIR=/var/log/nubilum
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/api/health"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+
+# To deploy:
+# 1. Copy docker/nginx-external.conf.example to your host's /etc/nginx/sites-available/
+# 2. Customize the domain and SSL certificate paths
+# 3. Enable the site: sudo ln -s /etc/nginx/sites-available/nubilum /etc/nginx/sites-enabled/
+# 4. Test nginx configuration: sudo nginx -t
+# 5. Reload nginx: sudo systemctl reload nginx
+# 6. Start the container: docker-compose -f docker-compose.production.yml up -d
