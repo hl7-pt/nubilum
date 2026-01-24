@@ -165,7 +165,7 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
     echo
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         git tag -d "$TAG"
-        git push upstream --delete "$TAG" 2>/dev/null || true
+        git push origin --delete "$TAG" 2>/dev/null || true
     else
         print_error "Aborted"
         exit 1
@@ -173,8 +173,8 @@ if git rev-parse "$TAG" >/dev/null 2>&1; then
 fi
 
 git tag -a "$TAG" -m "Release version $VERSION"
-print_info "Pushing tag to upstream..."
-git push upstream "$TAG"
+print_info "Pushing tag to origin..."
+git push origin "$TAG"
 
 # Create GitHub release
 if [ "$SKIP_GH" = false ]; then
@@ -333,4 +333,4 @@ if [ "$SKIP_DOCKER" = false ]; then
     echo "     - Full stack: docker run -p 8080:80 $REGISTRY/$REPO:$VERSION"
     echo "     - Standalone: docker run -p 5000:5000 $REGISTRY/$REPO:$VERSION-standalone"
 fi
-echo "  3. Push to main: git push upstream main"
+echo "  3. Push to main: git push origin main"
