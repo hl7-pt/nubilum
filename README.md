@@ -1,6 +1,6 @@
 # Nubilum - HL7 Portugal Message Anonymization Tool
 
-![Version](https://img.shields.io/badge/version-1.1.0-blue.svg)
+![Version](https://img.shields.io/badge/version-1.2.0-blue.svg)
 ![Python](https://img.shields.io/badge/python-3.9+-green.svg)
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
 
@@ -9,7 +9,7 @@ Nubilum is a web-based tool for anonymizing HL7 v2 messages in ER7 format. It pr
 ## Features
 
 - **Full PID Segment Anonymization**: Comprehensive anonymization of patient identification data
-- **Multi-Segment Support**: Anonymizes PID, NK1, PV1, OBX, ORC, OBR, SCH, AIG, AIL, AIP, and other segments
+- **Multi-Segment Support**: Anonymizes PID, NK1, PV1, OBX, ORC, OBR, SCH, AIG, AIL, AIP, TXA, and other segments
 - **Multi-Message Processing**: Handles multiple HL7 messages in a single request (separated by blank lines or multiple MSH segments)
 - **HL7 Message Validation**: Validates messages using HL7 Portugal validator API with collapsible result badges
 - **Multi-Language Support**: Full internationalization with English and Portuguese (i18n via Flask-Babel)
@@ -40,7 +40,7 @@ The default `Dockerfile` includes nginx as a reverse proxy serving static files 
 1. **Build the Docker image:**
 
 ```bash
-docker build -t nubilum:1.1.0 .
+docker build -t nubilum:1.2.0 .
 ```
 
 2. **Run the container:**
@@ -50,7 +50,7 @@ docker run -d \
   --name nubilum \
   -p 8080:80 \
   -v $(pwd)/logs:/var/log/nubilum \
-  nubilum:1.1.0
+  nubilum:1.2.0
 ```
 
 3. **Access the application:**
@@ -64,7 +64,7 @@ Use `Dockerfile.standalone` when you have an external nginx or other reverse pro
 1. **Build the standalone image:**
 
 ```bash
-docker build -f Dockerfile.standalone -t nubilum:1.1.0-standalone .
+docker build -f Dockerfile.standalone -t nubilum:1.2.0-standalone .
 ```
 
 2. **Run the container:**
@@ -74,7 +74,7 @@ docker run -d \
   --name nubilum \
   -p 5000:5000 \
   -v $(pwd)/logs:/var/log/nubilum \
-  nubilum:1.1.0-standalone
+  nubilum:1.2.0-standalone
 ```
 
 3. **Configure your reverse proxy:**
@@ -109,7 +109,7 @@ server {
 2. **Install the package:**
 
 ```bash
-pip install dist/nubilum-1.1.0-py3-none-any.whl
+pip install dist/nubilum-1.2.0-py3-none-any.whl
 ```
 
 3. **Run the application:**
@@ -261,6 +261,13 @@ curl "http://localhost:8080/api/field-name?segment=PID&field=3&version=2.5"
 - **Placer/Filler Order Numbers**: Generates pseudo ID: `ORDER######`
 - **Ordering Provider**: Pseudo-anonymized with "Dr" prefix
 
+### TXA Segment (Transcription Document Header)
+
+- **Activity Date/Time**: Shifts date by consistent offset
+- **Originator Code/Name**: Pseudo-anonymized with "Dr" prefix
+- **Assigned Document Authenticator**: Pseudo-anonymized with "Dr" prefix
+- **Transcriptionist Code/Name**: Pseudo-anonymized with "Dr" prefix
+
 ## Configuration
 
 ### Environment Variables
@@ -291,7 +298,7 @@ pip install build
 python -m build
 
 # Install locally
-pip install dist/nubilum-1.1.0-py3-none-any.whl
+pip install dist/nubilum-1.2.0-py3-none-any.whl
 ```
 
 ### Creating a Release
@@ -396,6 +403,7 @@ Options:
 - **NK1**: Next of Kin
 - **PV1**: Patient Visit
 - **PV2**: Patient Visit - Additional Info
+- **PD1**: Patient Demographics
 - **ORC**: Common Order
 - **OBR**: Observation Request
 - **OBX**: Observation Result
@@ -403,6 +411,13 @@ Options:
 - **AIG**: Appointment Information - General Resource
 - **AIL**: Appointment Information - Location Resource
 - **AIP**: Appointment Information - Personnel Resource
+- **TXA**: Transcription Document Header
+- **IN1/IN2/IN3**: Insurance Information
+- **GT1**: Guarantor Information
+- **ROL**: Role
+- **CTI**: Clinical Trial Identification
+- **DG1**: Diagnosis
+- **PR1**: Procedures
 
 ## Logging
 
@@ -579,6 +594,6 @@ See [I18N_GUIDE.md](I18N_GUIDE.md) for detailed instructions on:
 - Translation workflow
 - API endpoints for language management
 
-**Version**: 1.1.0
-**Last Updated**: December 2025
+**Version**: 1.2.0
+**Last Updated**: January 2026
 **Maintained by**: HL7 Portugal

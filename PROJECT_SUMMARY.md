@@ -64,12 +64,20 @@ The anonymizer handles multiple HL7 segments:
 - **PID**: Patient Identification (primary target)
   - Patient ID, names, DOB, addresses, phone numbers, SSN, account numbers
 - **NK1**: Next of Kin information
-- **PV1**: Patient Visit data (doctors, visit numbers)
+- **PV1/PV2**: Patient Visit data (doctors, visit numbers, additional info)
+- **PD1**: Patient Demographics
 - **ORC/OBR**: Order segments (order numbers, providers)
 - **OBX**: Observation results (observers)
 - **SCH**: Scheduling Activity Information (appointment IDs, placer contacts)
 - **AIG/AIL/AIP**: Appointment resources (personnel, locations)
-- **EVN/PV2**: Generic user/operator fields
+- **TXA**: Transcription Document Header (document creators, authenticators, transcriptionists)
+- **IN1/IN2/IN3**: Insurance Information
+- **GT1**: Guarantor Information
+- **ROL**: Role Information
+- **CTI**: Clinical Trial Identification
+- **DG1**: Diagnosis Information
+- **PR1**: Procedures
+- **EVN**: Generic user/operator fields
 
 ### 2. Smart Pseudo-Generation
 

@@ -465,12 +465,12 @@ def anonymize():
 
         logger.info(f"Received {len(messages)} message(s) for anonymization")
 
-        # Create anonymizer instance
-        anonymizer = HL7Anonymizer()
         anonymized_messages = []
 
         for idx, message in enumerate(messages, 1):
             try:
+                # Create a new anonymizer instance for each message to ensure proper anonymization
+                anonymizer = HL7Anonymizer()
                 # Anonymize the message
                 anonymized = anonymizer.anonymize_message(message)
                 anonymized_messages.append(anonymized)

@@ -185,6 +185,8 @@ class HL7Anonymizer:
                 fields = self._anonymize_dg1_segment(fields)
             elif segment_type == 'PR1':
                 fields = self._anonymize_pr1_segment(fields)
+            elif segment_type == 'TXA':
+                fields = self._anonymize_txa_segment(fields)
             elif segment_type == 'EVN':
                 fields = self._anonymize_generic_identifiers(fields)
 
@@ -680,5 +682,41 @@ class HL7Anonymizer:
         if len(fields) > 12 and fields[12]:
             if '^' in fields[12]:
                 fields[12] = self._anonymize_provider_name(fields[12])
+
+        return fields
+
+    def _anonymize_txa_segment(self, fields: list) -> list:
+        """Anonymize TXA (Transcription Document Header) segment."""
+        # TXA fields with PHI
+        # 5: Activity Date/Time
+        # 9: Originator Code/Name - provider who created the document
+        # 10: Assigned Document Authenticator - provider who authenticated
+        # 11: Transcriptionist Code/Name
+        # 22: Authentication Person, Time Stamp
+
+        if len(fields) > 5 and fields[5]:
+            # Activity Date/Time
+            fields[5] = self._anonymize_date(fields[5])
+
+        if len(fields) > 9 and fields[9]:
+            # Originator Code/Name (provider)
+            if '^' in fields[9]:
+                fields[9] = self._anonymize_provider_name(fields[9])
+
+        if len(fields) > 10 and fields[10]:
+            # Assigned Document Authenticator (provider)
+            if '^' in fields[10]:
+                fields[10] = self._anonymize_provider_name(fields[10])
+
+        if len(fields) > 11 and fields[11]:
+            # Transcriptionist Code/Name
+            if '^' in fields[11]:
+                fields[11] = self._anonymize_provider_name(fields[11])
+
+        if len(fields) > 22 and fields[22]:
+            # Authentication Person, Time Stamp
+            if '^' in fields[22]:
+                # This field contains both person and timestamp, anonymize the person part
+                fields[22] = self._anonymize_provider_name(fields[22])
 
         return fields
